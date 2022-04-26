@@ -1,0 +1,249 @@
+---
+title: "ResponsiP9"
+author: "Alwan Rahmana"
+date: "4/26/2022"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+
+```{r}
+library(dplyr)
+library(olsrr)
+
+library(ggpubr)
+
+
+library(qpcR)
+dataResponsi9
+d<-dataResponsi9
+head(d)
+
+#a
+#find three best subsets according to Cp criterion
+
+y<-d$y
+x1<-d$x1
+x2<-d$x2
+x3<-d$x3
+x4<-d$x4
+d
+modelf<-lm(y~x1+x2+x3+x4)
+apr<-ols_step_all_possible(modelf)
+n<-nrow(d)-2
+n
+p<-apr$n + 1 #banyak parameter
+
+
+
+#definisikan output yang diharapkan
+
+apr_output<-c(apr$predictors,
+              p,
+              n-p,
+              (apr$fpe*n*(n-p))/(n-p),
+              apr$rsquare,
+              (apr$fpe*n)/(n+p),
+              apr$adjr,
+              apr$aic,
+              apr$sbc,
+              apr$cp,press2)
+
+apr_print<-as.data.frame(matrix(apr_output,
+                                nrow=nrow(apr),
+                                ncol=11,
+                                byrow = FALSE)) #membuat tabel perbandingan
+apr_print[,-1]<-round(as.numeric(unlist(apr_print[,-1])),3) #pembulatan
+colnames(apr_print)<-c("Variabel x dalam model","p","df","SSE","R-Square","MSE","Adj. R-Square","AIC","SBC","Mallow's CP","PRESS") #penamaan kolom
+
+apr_print
+
+
+plot(x = apr_print$p,y = apr_print$`Mallow's CP`,
+   xlab = "P",
+   ylab = "Mallow's CP",
+   xlim = c(0,5),
+   main = "P  and Mallow's CP"
+)
+abline(lm(apr_print$`Mallow's CP` ~ apr_print$`Variabel x dalam model`))
+
+
+
+ggplot(data=apr_print, aes(x=p, y=`Mallow's CP`)) +
+        geom_smooth(method="lm") +
+        geom_point() +
+        stat_regline_equation(label.x=1, label.y=310)
+
+```
+stepwise
+
+```{r}
+class(d)
+model<-lm(y~.,data=d)
+summary(model)
+#berdasarkan p-value, model sudah baik karena signifikan, tapi kita akan cari model lain 
+finalModel<-step(model)
+#didapatkan model x1,x3, dan x4 menjadi yang terbaik
+summary(finalModel)
+```
+Manual Stepwise dengan urutan Mallow's CP
+```{r}
+library(olsrr)
+modelAll<-ols_step_all_possible(model)
+modelAll
+#best 1 var model -> x3 x4 x1 x2
+attach(model)
+model1<-lm(y~x3,data=d)
+anova(model1)
+summary(model1)
+#x3 signifikan
+model2<-lm(y~x3+x4,data=d)
+anova(model2)
+summary(model2)
+#x4 signifikan
+#cek drop model x3 pakai F*
+
+#lebih dari F tabel yang ditentukan
+#tidak didrop
+model3<-lm(y~x3+x4+x1,data=d)
+anova(model3)
+summary(model3)
+#x1 signifikan
+#cek drop model x3 pakai F*
+#cek drop model x4 pakai F*
+#lebih dari F tabel yang ditentukan
+#tidak didrop
+model4<-lm(y~x3+x4+x1+x2,data=d)
+anova(model4)
+summary(model4)
+#x2 tidak melewati F* yang ditetapkan, maka x2 tidak masuk dalam model
+
+#best model <- model 3
+#cek dengan uji t
+summary(model3)
+#masing2 variabel berpengaruh signifikan
+#nilai F* adalah F(1-alpha,P-1,n-P)
+```
+best linear model MSE criterion
+```{r}
+
+p1<-apr_print[]
+p1
+m1<-lm(y~x1,data=d)
+m2<-lm(y~x2,data=d)
+m3<-lm(y~x3,data=d)
+m4<-lm(y~x4,data=d)
+m12<-lm(y~x1+x2)
+m13<-lm(y~x1+x3)
+m14<-lm(y~x1+x4)
+m23<-lm(y~x2+x3)
+m24<-lm(y~x2+x4)
+m34<-lm(y~x3+x4)
+m123<-lm(y~x1+x2+x3)
+m124<-lm(y~x1+x2+x4)
+m134<-lm(y~x1+x3+x4)
+m234<-lm(y~x2+x3+x4)
+m1234<-lm(y~x1+x2+x3+x4)
+
+
+anova(m1)
+anova(m2)
+anova(m3)
+anova(m4)
+anova(m12)
+anova(m13)
+anova(m14)
+anova(m23)
+anova(m24)
+anova(m34)
+anova(m123)
+anova(m124)
+anova(m134)
+anova(m234)
+anova(m1234)
+
+```
+best linear model adj. R-Square criterion
+```{r}
+summary(m1)
+summary(m2)
+summary(m3)
+summary(m4)
+summary(m12)
+summary(m13)
+summary(m14)
+summary(m23)
+summary(m24)
+summary(m34)
+summary(m123)
+summary(m124)
+summary(m134)
+summary(m234)
+summary(m1234)
+```
+Using AIC
+
+```{r}
+library(stats)
+AIC(m1)
+AIC(m2)
+AIC(m3)
+AIC(m4)
+AIC(m12)
+AIC(m13)
+AIC(m14)
+AIC(m23)
+AIC(m24)
+AIC(m34)
+AIC(m123)
+AIC(m124)
+AIC(m134)
+AIC(m234)
+AIC(m1234)
+
+```
+```{r}
+#PRESS
+
+PRESS1 <- function(model) {
+    i <- residuals(model)/(1 - lm.influence(model)$hat)
+    sum(i^2)
+}
+library(qpcR)
+library(olsrr)
+ols_press(m3)
+ols_press(m4)
+ols_press(m1)
+ols_press(m2)
+ols_press(m13)
+ols_press(m34)
+ols_press(m23)
+ols_press(m14)
+ols_press(m24)
+ols_press(m12)
+ols_press(m134)
+ols_press(m123)
+ols_press(m234)
+ols_press(m124)
+
+ols_press(m1234)
+press2<-NULL
+press2<-as.data.frame(press2)
+
+press2<-c(ols_press(m3),ols_press(m4),
+ols_press(m1),
+ols_press(m2),
+ols_press(m13),
+ols_press(m34),
+ols_press(m23),
+ols_press(m14),
+ols_press(m24),
+ols_press(m12),
+ols_press(m134),
+ols_press(m123),
+ols_press(m234),
+ols_press(m124),ols_press(m1234))
+```
+
